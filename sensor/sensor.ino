@@ -4,7 +4,7 @@
 #include <epd1in54.h>
 #include <epdpaint.h>
 //#include <LowPower.h>
-////#include "DotFont.h"
+#include "DotFont.h"
 ////#include "messages.h"
 
 // DHT configuration
@@ -25,85 +25,7 @@ RH_ASK driver(TXSPEED, RXPIN, TXPIN, PTTPIN);
 const unsigned char image[640];
 const Paint paint(image, 0, 0);
 const Epd epd;
-
-const byte DOT_FONT[10][5] PROGMEM = {
-  {
-   0x7C,
-   0x82,
-   0x82,
-   0x82,
-   0x7C   
-  },
-  {
-   0x00,
-   0x00,
-   0x00,
-   0x02,
-   0xFE   
-  },
-  {
-   0xE4,
-   0x92,
-   0x92,
-   0x92,
-   0x4C  
-  },
-  {
-   0x44,
-   0x92,
-   0x92,
-   0x92,
-   0x6C  
-  }
-,
-  {
-   0x1E,
-   0x10,
-   0x10,
-   0x10,
-   0xFE  
-  }
-,
-  {
-   0x5E,
-   0x92,
-   0x92,
-   0x92,
-   0x62  
-  }
-,
-  {
-   0x7C,
-   0x92,
-   0x92,
-   0x92,
-   0x64
-  }
-,
-  {
-   0x02,
-   0xE2,
-   0x12,
-   0x0A,
-   0x06
-  }
-,
-  {
-   0x6C,
-   0x92,
-   0x92,
-   0x92,
-   0x6C
-  }
-,
-  {
-   0x4C,
-   0x92,
-   0x92,
-   0x92,
-   0x7C
-  }
-};
+const DotFont dotFont(&paint);
 
 void setup() {
   Serial.begin(9600);
@@ -177,7 +99,7 @@ void loop() {
 //  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 //  LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF, 
 //                SPI_OFF, USART0_OFF, TWI_OFF);
-//  delay(5000);
+  delay(5000);
 }
 
 //void initBoard() {
@@ -195,51 +117,6 @@ void loop() {
 //  // by setting bits 0-5 to one.
 //  DIDR0 = DIDR0 | B00111111;
 //}
-
-void circle_text(char txt[], int len, int x,int y, int radius){
-  int left=x;
-  for (int i=0; i<len; i++) {
-    if (txt[i]>=48 and txt[i]<=57) {
-      char digit[5];
-      memcpy_P(digit, DOT_FONT[txt[i]-48], sizeof digit);
-      draw_char(digit, left, y, radius);
-      if (txt[i+1]==49) {
-        left+=radius*10;
-      } else {
-        left+=radius*20;
-      }
-    } else if (txt[i]==58){
-       paint.DrawFilledCircle(left, y+radius*15, radius, COLORED);
-       paint.DrawFilledCircle(left, y+radius*4, radius, COLORED);
-       left+=radius*8;
-    } else if (txt[i]==46){
-       paint.DrawFilledCircle(left, y+radius*18, radius, COLORED);
-       left+=radius*8;
-    } else if (txt[i] == 45) {
-       paint.DrawFilledCircle(left+radius*9, y+radius*8, radius, COLORED);
-       paint.DrawFilledCircle(left+radius*12, y+radius*8, radius, COLORED);
-       left+=radius*20;
-    } else {
-       left+=radius*20;
-    }  
-  }
-}
-
-void draw_char(unsigned char c[5], int xbegin, int ybegin, byte radius) {  
-//  epd_set_color(BLACK, WHITE);
-  char ctemp;
-  for (int x=0; x<5; x++){
-    ctemp=c[x];
-    for (int y=0; y<7; y++) {
-      ctemp>>=1;
-        if ( ctemp & 01) {
-          paint.DrawFilledCircle(x*radius*3+xbegin, y*radius*3+ybegin, radius, COLORED);
-        }
-//        else
-//          epd_draw_circle(x*radius*3+xbegin, y*radius*3+ybegin, radius);
-    }
-  }
-}
 
 void draw(float data[]) {
   epd.Reset();
@@ -269,14 +146,14 @@ void drawTemperature(float temperature, float humiture) {
   paint.SetWidth(100);
   paint.SetHeight(65);
   paint.Clear(UNCOLORED);
-  circle_text(it, strlen(it), 3, 3, 3);
+  dotFont.DrawCharAt(3, 3, it, 3);
   epd.SetFrameMemory(paint.GetImage(), 30, 20, paint.GetWidth(), paint.GetHeight());
 
   // Decimal part of the temperature
   paint.SetWidth(20);
   paint.SetHeight(25);
   paint.Clear(UNCOLORED);
-  circle_text(dt, strlen(dt), 1, 1, 1);
+  dotFont.DrawCharAt(1, 1, dt, 1);
   epd.SetFrameMemory(paint.GetImage(), 155, 60, paint.GetWidth(), paint.GetHeight());
 
   char h[4] = "--";
@@ -325,7 +202,7 @@ void drawHumidity(float humidity) {
   paint.SetWidth(100);
   paint.SetHeight(65);
   paint.Clear(UNCOLORED);
-  circle_text(ih, strlen(ih), 3, 3, 3);
+  dotFont.DrawCharAt(3, 3, ih, 3);
   epd.SetFrameMemory(paint.GetImage(), 30, 120, paint.GetWidth(), paint.GetHeight());
   
   // Percent sign
