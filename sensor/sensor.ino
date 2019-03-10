@@ -63,14 +63,18 @@ void setup() {
 void loop() {
   Serial.println(F("==> Start loop..."));
 
-  // Reading temperature or humidity takes about 250 milliseconds!
-  // Read temperature as Celsius (the default)
   float data[4];
-  data[0] = dht.readTemperature();
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  data[1] = dht.readHumidity();
-  // Read heat index as Celsius (the default)
-  data[2] = dht.computeHeatIndex(data[0], data[1], false);
+
+  if (dht.read(true)) {
+    // Reading temperature or humidity takes about 250 milliseconds!
+    // Read temperature as Celsius (the default)
+    data[0] = dht.readTemperature();
+    // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+    data[1] = dht.readHumidity();
+    // Read heat index as Celsius (the default)
+    data[2] = dht.computeHeatIndex(data[0], data[1], false);
+  }
+
   // Read the current voltage
   data[3] = readVcc();
 
