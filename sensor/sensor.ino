@@ -5,7 +5,6 @@
 #include <epdpaint.h>
 //#include <LowPower.h>
 #include "DotFont.h"
-////#include "messages.h"
 
 // DHT configuration
 #define DHTPIN 2
@@ -27,21 +26,22 @@ const Paint paint(image, 0, 0);
 const Epd epd;
 const DotFont dotFont(&paint);
 
+
 void setup() {
   Serial.begin(9600);
-  Serial.println("==> Initialise sensor...");
+  Serial.println(F("==> Initialise sensor..."));
 
 //  initBoard();
   
   dht.begin();
 
   if (!driver.init()) {
-    Serial.println("TX initialisation failed");
+    Serial.println(F("TX initialisation failed"));
     return;
   }
 
   if (epd.Init(lut_full_update) != 0) {
-    Serial.println("E-paper screen initialisation failed");
+    Serial.println(F("E-paper screen initialisation failed"));
     return;
   }
 
@@ -51,17 +51,18 @@ void setup() {
   epd.DisplayFrame();
 
   if (epd.Init(lut_partial_update) != 0) {
-    Serial.println("E-paper screen initialisation failed");
+    Serial.println(F("E-paper screen initialisation failed"));
     return;
   }
   
   paint.SetRotate(ROTATE_0);
   
-  Serial.println("Initialisation complete");
+  Serial.println(F("Initialisation complete"));
 }
 
 void loop() {
-  Serial.println("==> Start loop...");
+  Serial.println(F("==> Start loop..."));
+
   // Reading temperature or humidity takes about 250 milliseconds!
   // Read temperature as Celsius (the default)
   float data[4];
@@ -75,14 +76,14 @@ void loop() {
 
   draw(data);
 
-  Serial.println("Collected data:");
-  Serial.print("-> temparature: ");
+  Serial.println(F("Collected data:"));
+  Serial.print(F("-> temparature: "));
   Serial.println(data[0]);
-  Serial.print("-> humidity: ");
+  Serial.print(F("-> humidity: "));
   Serial.println(data[1]);
-  Serial.print("-> humiture: ");
+  Serial.print(F("-> humiture: "));
   Serial.println(data[2]);
-  Serial.print("-> voltage: ");
+  Serial.print(F("-> voltage: "));
   Serial.println(data[3]);
   
   // Check if any reads failed and exit early (to try again).
@@ -91,7 +92,7 @@ void loop() {
   } else {
     Serial.println((char *)data);
     
-    Serial.println("Sending payload...");
+    Serial.println(F("Sending payload..."));
     driver.send((uint8_t *)data, 3 * sizeof(data[0]));
     driver.waitPacketSent();
   }
@@ -130,11 +131,6 @@ void draw(float data[]) {
 void drawTemperature(float temperature, float humiture) {
   char it[2] = "--";
   char dt[2] = "--";
-//  PROGMEM
-//  char it[2];
-//  char dt[2];
-//  strcpy_P(it, (char *)pgm_read_word(INIT)); 
-//  strcpy_P(dt, (char *)pgm_read_word(INIT)); 
   if (!isnan(temperature)) {
     char t[4];
     dtostrf(temperature, 4, 1, t);
@@ -157,9 +153,6 @@ void drawTemperature(float temperature, float humiture) {
   epd.SetFrameMemory(paint.GetImage(), 155, 60, paint.GetWidth(), paint.GetHeight());
 
   char h[4] = "--";
-//  PROGMEM
-//  char h[4];
-//  strcpy_P(h, (char *)pgm_read_word(MESSAGES[0])); 
   if (!isnan(humiture)) {
     dtostrf(humiture, 4, 1, h);
   }
@@ -191,9 +184,6 @@ void drawTemperature(float temperature, float humiture) {
 
 void drawHumidity(float humidity) {
   char ih[2] = "--";
-//  PROGMEM
-//  char ih[2];
-//  strcpy_P(ih, (char *)pgm_read_word(MESSAGES[0])); 
   if (!isnan(humidity)) {
     dtostrf(humidity, 2, 0, ih);
   }
@@ -218,19 +208,14 @@ void drawHumidity(float humidity) {
   if (isnan(humidity)) {
     strncpy(rate, "", 1);
   } else if (humidity < 30) {
-//    strcpy_P(rate, (char *)pgm_read_word(MESSAGES[1])); 
     strncpy(rate, "HELP!", 5);
   } else if (humidity < 45) {
-//    strcpy_P(rate, (char *)pgm_read_word(MESSAGES[2])); 
     strncpy(rate, "MEH..", 5);
   } else if (humidity < 55) {
-//    strcpy_P(rate, (char *)pgm_read_word(MESSAGES[3])); 
     strncpy(rate, "YAY! ", 5);
-  } else if (humidity < 60) {
-//    strcpy_P(rate, (char *)pgm_read_word(MESSAGES[1])); 
+  } else if (humidity < 60) { 
     strncpy(rate, "MEH..", 5);
-  } else {
-//    strcpy_P(rate, (char *)pgm_read_word(MESSAGES[2])); 
+  } else { 
     strncpy(rate, "HELP!", 5);
   }
 
