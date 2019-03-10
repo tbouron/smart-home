@@ -18,8 +18,8 @@
 #define COLORED 0
 #define UNCOLORED 1
 
-DHT dht(DHTPIN, DHTTYPE);
-RH_ASK driver(TXSPEED, RXPIN, TXPIN, PTTPIN);
+const DHT dht(DHTPIN, DHTTYPE);
+const RH_ASK driver(TXSPEED, RXPIN, TXPIN, PTTPIN);
 
 const unsigned char image[640];
 const Paint paint(image, 0, 0);
@@ -73,6 +73,14 @@ void loop() {
     data[1] = dht.readHumidity();
     // Read heat index as Celsius (the default)
     data[2] = dht.computeHeatIndex(data[0], data[1], false);
+  } else {
+    data[0] = sqrt(-1);
+    data[1] = sqrt(-1);
+    data[2] = sqrt(-1);
+  }
+
+  if (isnan(data[0]) || isnan(data[1]) || isnan(data[2])) {
+    Serial.println("[x] Failed to read from DHT sensor");
   }
 
   // Read the current voltage
@@ -80,25 +88,22 @@ void loop() {
 
   draw(data);
 
-  Serial.println(F("Collected data:"));
-  Serial.print(F("-> temparature: "));
-  Serial.println(data[0]);
-  Serial.print(F("-> humidity: "));
-  Serial.println(data[1]);
-  Serial.print(F("-> humiture: "));
-  Serial.println(data[2]);
-  Serial.print(F("-> voltage: "));
-  Serial.println(data[3]);
-  
-  // Check if any reads failed and exit early (to try again).
-  if (isnan(data[0]) || isnan(data[1]) || isnan(data[2])) {
-    Serial.println("[x] Failed to read from DHT sensor!");
-  } else {
-    Serial.println((char *)data);
-    
-    Serial.println(F("Sending payload..."));
-    driver.send((uint8_t *)data, 3 * sizeof(data[0]));
+  Serial.print(F("Data collected =>"));
+  Serial.print(F(" temparature :: "));
+  Serial.print(data[0]);
+  Serial.print(F(" | humidity :: "));
+  Serial.print(data[1]);
+  Serial.print(F(" | humiture :: "));
+  Serial.print(data[2]);
+  Serial.print(F(" | voltage :: "));
+  Serial.print(data[3]);
+  Serial.println();
+
+  if (driver.send((uint8_t *)data, 4 * sizeof(data[0]))) {
     driver.waitPacketSent();
+    Serial.println(F("Payload sent"));
+  } else {
+    Serial.println(F("[x] Failed to send payload. Data or length invalid"));
   }
 
 //  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
@@ -155,24 +160,6 @@ void drawTemperature(float temperature, float humiture) {
   paint.Clear(UNCOLORED);
   dotFont.DrawCharAt(1, 1, dt, 1);
   epd.SetFrameMemory(paint.GetImage(), 155, 60, paint.GetWidth(), paint.GetHeight());
-
-  char h[4] = "--";
-  if (!isnan(humiture)) {
-    dtostrf(humiture, 4, 1, h);
-  }
-
-  // Heat index
-  paint.SetWidth(110);
-  paint.SetHeight(16);
-  paint.Clear(UNCOLORED);
-  paint.DrawStringAt(0, 0, "Feels like", &Font12, COLORED);
-  epd.SetFrameMemory(paint.GetImage(), 30, 92, paint.GetWidth(), paint.GetHeight());
-
-  paint.SetWidth(30);
-  paint.SetHeight(10);
-  paint.Clear(COLORED);
-  paint.DrawStringAt(0, 0, h, &Font12, UNCOLORED);
-  epd.SetFrameMemory(paint.GetImage(), 106, 92, paint.GetWidth(), paint.GetHeight());
   
   // Celcius sign
   paint.SetWidth(31);
@@ -184,6 +171,24 @@ void drawTemperature(float temperature, float humiture) {
   paint.DrawHorizontalLine(15, 30, 15, COLORED);
   paint.DrawVerticalLine(15, 0, 30, COLORED);  
   epd.SetFrameMemory(paint.GetImage(), 150, 20, paint.GetWidth(), paint.GetHeight());
+
+  if (!isnan(humiture)) {
+    char h[4];
+    dtostrf(humiture, 4, 1, h);
+
+    // Heat index
+    paint.SetWidth(110);
+    paint.SetHeight(16);
+    paint.Clear(UNCOLORED);
+    paint.DrawStringAt(0, 0, "Feels like", &Font12, COLORED);
+    epd.SetFrameMemory(paint.GetImage(), 30, 92, paint.GetWidth(), paint.GetHeight());
+
+    paint.SetWidth(30);
+    paint.SetHeight(10);
+    paint.Clear(UNCOLORED);
+    paint.DrawStringAt(0, 0, h, &Font12, COLORED);
+    epd.SetFrameMemory(paint.GetImage(), 106, 92, paint.GetWidth(), paint.GetHeight());
+  }
 }
 
 void drawHumidity(float humidity) {
@@ -208,27 +213,27 @@ void drawHumidity(float humidity) {
   paint.DrawLine(0, 30, 20, 0, COLORED);
   epd.SetFrameMemory(paint.GetImage(), 155, 150, paint.GetWidth(), paint.GetHeight());
 
-  char rate[5];
-  if (isnan(humidity)) {
-    strncpy(rate, "", 1);
-  } else if (humidity < 30) {
-    strncpy(rate, "HELP!", 5);
-  } else if (humidity < 45) {
-    strncpy(rate, "MEH..", 5);
-  } else if (humidity < 55) {
-    strncpy(rate, "YAY! ", 5);
-  } else if (humidity < 60) { 
-    strncpy(rate, "MEH..", 5);
-  } else { 
-    strncpy(rate, "HELP!", 5);
-  }
+  if (!isnan(humidity)) {
+    char rate[5];
+    if (humidity < 30) {
+      strncpy(rate, "HELP!", 5);
+    } else if (humidity < 45) {
+      strncpy(rate, "MEH..", 5);
+    } else if (humidity < 55) {
+      strncpy(rate, "YAY!", 5);
+    } else if (humidity < 60) {
+      strncpy(rate, "MEH..", 5);
+    } else {
+      strncpy(rate, "HELP!", 5);
+    }
 
-  // Draw the rate
-  paint.SetWidth(30);
-  paint.SetHeight(16);
-  paint.Clear(UNCOLORED);
-  paint.DrawStringAt(0, 0, rate, &Font12, COLORED);
-  epd.SetFrameMemory(paint.GetImage(), 155, 120, paint.GetWidth(), paint.GetHeight());
+    // Draw the rate
+    paint.SetWidth(30);
+    paint.SetHeight(16);
+    paint.Clear(UNCOLORED);
+    paint.DrawStringAt(0, 0, rate, &Font12, COLORED);
+    epd.SetFrameMemory(paint.GetImage(), 155, 120, paint.GetWidth(), paint.GetHeight());
+  }
 }
 
 void drawBatteryIndicator(float voltage) {
