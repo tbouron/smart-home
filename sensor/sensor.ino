@@ -7,12 +7,13 @@
 #include "DotFont.h"
 
 // DHT configuration
-#define DHTPIN 2
+#define DHTPIN 5
 #define DHTTYPE DHT22
 // TX/TX configuration
+#define TXVCCPIN 2
 #define TXSPEED 2000
-#define RXPIN 11
-#define TXPIN 12
+#define RXPIN 4
+#define TXPIN 3
 #define PTTPIN 7
 // E-paper configuration
 #define COLORED 0
@@ -26,19 +27,19 @@ const Paint paint(image, 0, 0);
 const Epd epd;
 const DotFont dotFont(&paint);
 
-
 void setup() {
   Serial.begin(9600);
   Serial.println(F("==> Initialise sensor..."));
-
-//  initBoard();
   
   dht.begin();
 
+  pinMode(TXVCCPIN, OUTPUT);
+  digitalWrite(TXVCCPIN, HIGH);
   if (!driver.init()) {
     Serial.println(F("TX initialisation failed"));
     return;
   }
+  digitalWrite(TXVCCPIN, LOW);
 
   if (epd.Init(lut_full_update) != 0) {
     Serial.println(F("E-paper screen initialisation failed"));
@@ -99,12 +100,14 @@ void loop() {
   Serial.print(data[3]);
   Serial.println();
 
+  digitalWrite(TXVCCPIN, HIGH);
   if (driver.send((uint8_t *)data, 4 * sizeof(data[0]))) {
     driver.waitPacketSent();
     Serial.println(F("Payload sent"));
   } else {
     Serial.println(F("[x] Failed to send payload. Data or length invalid"));
   }
+  digitalWrite(TXVCCPIN, LOW);
 
 //  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 //  LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF, 
