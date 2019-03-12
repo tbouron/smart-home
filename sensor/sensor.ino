@@ -26,6 +26,10 @@ const unsigned char image[640];
 const Paint paint(image, 0, 0);
 const Epd epd;
 const DotFont dotFont(&paint);
+const int INTERVAL = 6;
+const int ITERATIONS_BEFORE_SEND = 10;
+
+int count = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -64,6 +68,8 @@ void setup() {
 void loop() {
   Serial.println(F("==> Start loop..."));
 
+  count++;
+
   float data[4];
 
   if (dht.read(true)) {
@@ -100,19 +106,21 @@ void loop() {
   Serial.print(data[3]);
   Serial.println();
 
-  digitalWrite(TXVCCPIN, HIGH);
-  if (driver.send((uint8_t *)data, 4 * sizeof(data[0]))) {
-    driver.waitPacketSent();
-    Serial.println(F("Payload sent"));
-  } else {
-    Serial.println(F("[x] Failed to send payload. Data or length invalid"));
+  if (count % ITERATIONS_BEFORE_SEND == 0) {
+    digitalWrite(TXVCCPIN, HIGH);
+    if (driver.send((uint8_t *)data, 4 * sizeof(data[0]))) {
+      driver.waitPacketSent();
+      Serial.println(F("Payload sent"));
+    } else {
+      Serial.println(F("[x] Failed to send payload. Data or length invalid"));
+    }
+    digitalWrite(TXVCCPIN, LOW);
   }
-  digitalWrite(TXVCCPIN, LOW);
 
 //  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 //  LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF, 
 //                SPI_OFF, USART0_OFF, TWI_OFF);
-  delay(5000);
+  delay(INTERVAL * 1000);
 }
 
 //void initBoard() {
