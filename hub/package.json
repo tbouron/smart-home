@@ -1,0 +1,15 @@
+{
+  "name": "smart-home-hub",
+  "version": "1.0.0",
+  "description": "IoT server which receive data from 433MHz RF signals and save it to ElasticSearch",
+  "keywords": ["iot", "raspberrypi", "arduino", "elasticsearch", "433mhz", "rf", "ask", "serial"]
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Thomas Bouron <tbouron@gmail.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "radiohead-serial": "^4.0.0"
+  }
+}
