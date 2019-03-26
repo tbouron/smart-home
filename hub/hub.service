@@ -1,0 +1,15 @@
+[Unit]
+Description=Smart Home Hub
+After=network.target
+
+[Service]
+Type=simple
+# Another Type option: forking
+User=pi
+WorkingDirectory=/home/pi/smart-home/hub
+ExecStart=/usr/bin/node index.js
+Restart=on-failure
+# Other Restart options: or always, on-abort, etc
+
+[Install]
+WantedBy=multi-user.target
